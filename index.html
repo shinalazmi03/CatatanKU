@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CatatanKu</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <meta name="theme-color" content="#005E6A">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+
+    <div id="login-view" class="view active">
+        <div class="login-card card">
+            <h2>CatatanKu</h2>
+            <p>Sistem Pencatatan Agen</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="login-username" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Masuk</button>
+            </form>
+        </div>
+        <div class="footer-copy">Copyright @ShinAlazmi</div>
+    </div>
+
+    <div id="admin-view" class="view hidden">
+        <header class="app-header">
+            <h2>Panel Admin - CatatanKu</h2>
+            <button onclick="logout()" class="icon-btn"><span class="material-icons">logout</span></button>
+        </header>
+        <main class="content-padding">
+            <div class="card stat-card">
+                <h3>Statistik Global</h3>
+                <p>Total User: 1 (Lokal)</p>
+                <p>Total Transaksi: <span id="admin-total-trx">0</span></p>
+            </div>
+            
+            <div class="card">
+                <h3>Pengaturan Sistem</h3>
+                <div class="input-group">
+                    <label>URL Web App Google Sheets</label>
+                    <input type="text" id="admin-sheet-url" placeholder="https://script.google.com/macros/s/.../exec">
+                    <button onclick="saveSheetUrl()" class="btn btn-primary" style="margin-top: 10px;">Simpan URL</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Monitoring Transaksi</h3>
+                <div id="admin-trx-list" class="list-container"></div>
+            </div>
+        </main>
+        <div class="footer-copy">Copyright @ShinAlazmi</div>
+    </div>
+
+    <div id="app-view" class="view hidden">
+        <header class="app-header">
+            <h2>CatatanKu</h2>
+            <div class="header-status">
+                <span id="sync-badge" class="badge bg-red hidden">0 Tertunda</span>
+                <span id="network-status" class="status-indicator online"></span>
+            </div>
+        </header>
+
+        <main id="app-content" class="content-padding pb-80">
+            <section id="tab-dashboard" class="tab-content active">
+                <div class="card welcome-card">
+                    <h3>Halo, Kasir!</h3>
+                    <p>Total Hari Ini: <strong class="text-primary" id="dash-total-today">Rp 0</strong></p>
+                </div>
+                <div class="card">
+                    <h3>Tren Harian</h3>
+                    <canvas id="trendChart" height="200"></canvas>
+                </div>
+                <div class="grid-2">
+                    <div class="card text-center">
+                        <small>Piutang Pelanggan</small>
+                        <h4 class="text-danger" id="dash-piutang">Rp 0</h4>
+                    </div>
+                    <div class="card text-center">
+                        <small>Hutang Saya</small>
+                        <h4 class="text-warning" id="dash-hutang">Rp 0</h4>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-transaksi" class="tab-content hidden">
+                <h3>Transaksi Hari Ini</h3>
+                <div id="today-trx-list" class="list-container"></div>
+            </section>
+
+            <section id="tab-riwayat" class="tab-content hidden">
+                <div class="segmented-control">
+                    <button class="seg-btn active" onclick="switchReportTab('umum')">Umum</button>
+                    <button class="seg-btn" onclick="switchReportTab('hutang')">Buku Hutang</button>
+                </div>
+                <div id="report-umum" class="report-section">
+                    <div id="history-list" class="list-container mt-15"></div>
+                </div>
+                <div id="report-hutang" class="report-section hidden">
+                    <div id="debt-list" class="list-container mt-15"></div>
+                </div>
+            </section>
+
+            <section id="tab-pengaturan" class="tab-content hidden">
+                <div class="card">
+                    <button class="btn btn-outline full-width mb-10" onclick="alert('Manajemen Kategori - Coming Soon')">Kategori</button>
+                    <button class="btn btn-outline full-width mb-10" onclick="alert('Manajemen Kontak - Coming Soon')">Buku Kontak</button>
+                    <hr>
+                    <button class="btn btn-primary full-width mb-10" onclick="forceSync()">Force Sync</button>
+                    <button class="btn btn-danger full-width" onclick="logout()">Logout</button>
+                </div>
+                <div class="footer-copy text-center mt-15">Copyright @ShinAlazmi</div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('dashboard')">
+                <span class="material-icons">home</span><small>Beranda</small>
+            </button>
+            <button class="nav-item" onclick="switchTab('transaksi')">
+                <span class="material-icons">receipt_long</span><small>Transaksi</small>
+            </button>
+            <div class="nav-item fab-container">
+                <button class="fab" onclick="openInputModal()">
+                    <span class="material-icons">add</span>
+                </button>
+            </div>
+            <button class="nav-item" onclick="switchTab('riwayat')">
+                <span class="material-icons">bar_chart</span><small>Laporan</small>
+            </button>
+            <button class="nav-item" onclick="switchTab('pengaturan')">
+                <span class="material-icons">settings</span><small>Seting</small>
+            </button>
+        </nav>
+    </div>
+
+    <div id="input-modal" class="modal hidden">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h3>Input Transaksi</h3>
+                <button onclick="closeInputModal()" class="icon-btn"><span class="material-icons">close</span></button>
+            </header>
+            <form id="trx-form" class="modal-body">
+                <div class="input-group">
+                    <label>Nominal</label>
+                    <input type="text" id="inp-nominal" class="format-rp" required placeholder="Rp 0">
+                </div>
+                <div class="input-group">
+                    <label>Biaya Admin</label>
+                    <input type="text" id="inp-admin" class="format-rp" placeholder="Rp 0">
+                </div>
+                <div class="input-group">
+                    <label>Status Pembayaran</label>
+                    <div class="segmented-control">
+                        <button type="button" class="seg-btn active" id="btn-tunai" onclick="setPaymentType('Tunai')">TUNAI</button>
+                        <button type="button" class="seg-btn" id="btn-hutang" onclick="setPaymentType('Hutang')">HUTANG</button>
+                    </div>
+                    <input type="hidden" id="inp-payment-type" value="Tunai">
+                </div>
+                
+                <div id="hutang-fields" class="hidden">
+                    <div class="input-group">
+                        <label>Nama Kontak / Pelanggan</label>
+                        <input type="text" id="inp-contact" placeholder="Cari atau ketik nama...">
+                    </div>
+                    <div class="input-group">
+                        <label>No. WA</label>
+                        <input type="tel" id="inp-wa" placeholder="08...">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Keterangan</label>
+                    <input type="text" id="inp-keterangan" placeholder="Catatan...">
+                </div>
+                <button type="submit" class="btn btn-primary full-width mt-15">Simpan Transaksi</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
